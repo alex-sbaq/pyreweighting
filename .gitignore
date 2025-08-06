@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyReweighting output files
+*.xvg
+pmf_*.xvg
+histo-*.xvg
+dV-*.xvg
+weights.png
+*_Free_energy_surface.png

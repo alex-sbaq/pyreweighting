@@ -1,6 +1,11 @@
 # PyReweighting
 A toolkit of python scripts "PyReweighting" is provided to facilitate the reweighting of accelerated molecular dynamics (aMD) simulations. PyReweighting implements a list of commonly used reweighting methods, including (1) exponential average that reweights trajectory frames by the Boltzmann factor of the boost potential and then calculates the ensemble average for each bin, (2) Maclaurin series expansion that approximates the exponential Boltzmann factor, and (3) cumulant expansion that expresses the reweighting factor as summation of boost potential cumulants.
 
+## Recent Improvements
+- **Fixed grid resolution bug**: Fine discretization grids now work correctly (previously produced flat PMFs)
+- **Smart histogram cutoff**: Automatic adjustment for sparse binning with user warnings
+- **NumPy/SciPy compatibility**: Updated for modern Python environments (NumPy 1.24+, SciPy 1.13+)
+
 # Usage
 * Update dir_codes in the .sh files to the folder where you save the .py scripts
 
