@@ -74,8 +74,10 @@ def main():
 ##  SET HISTOGRAM CUTOFF
     if args.cutoff:
         hist_min=int(args.cutoff)
+        user_defined_cutoff = True
     else :
         hist_min = 10	# minimum number of configurations in one bin
+        user_defined_cutoff = False
 
 ##  SET ORDER of McLaurin series expansion
     if args.order:
@@ -99,7 +101,7 @@ def main():
 
 ##REWEIGHTING
     if args.job == "amdweight_CE":
-        hist2,newedgesX,newedgesY,c1,c2,c3 = reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit)
+        hist2,newedgesX,newedgesY,c1,c2,c3 = reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit,user_defined_cutoff)
         pmf = hist2pmf2D(hist2,hist_min,T)
         c1 = -np.multiply(1.0/beta,c1)
         c2 = -np.multiply(1.0/beta,c2)
@@ -287,9 +289,58 @@ def prephist(hist2,T,cb_max):
                 temphist2[jx,jy]=cb_max
     return temphist2
 
+def smart_hist_cutoff(hist2, data, hist_min_initial, user_defined=False, min_bins_required=5):
+    """
+    Automatically adjust histogram cutoff to ensure sufficient bins for PMF calculation.
+    
+    Args:
+        hist2: 2D histogram from np.histogram2d
+        data: input CV data  
+        hist_min_initial: initial histogram cutoff
+        user_defined: if True, user explicitly set cutoff (don't auto-adjust)
+        min_bins_required: minimum number of bins needed for meaningful PMF
+        
+    Returns:
+        adjusted_hist_min: optimized histogram cutoff
+        bins_available: number of bins that meet the cutoff
+    """
+    if user_defined:
+        bins_available = np.sum(hist2 >= hist_min_initial)
+        return hist_min_initial, bins_available
+    
+    # Try progressively lower cutoffs to ensure we have enough bins
+    nframes = len(data)
+    nbins_total = hist2.size
+    
+    # Start with initial cutoff and reduce if necessary
+    for test_cutoff in [hist_min_initial, 8, 6, 4, 3, 2, 1]:
+        bins_available = np.sum(hist2 >= test_cutoff)
+        
+        if bins_available >= min_bins_required:
+            if test_cutoff < hist_min_initial:
+                print(f"WARNING: Adjusted histogram cutoff from {hist_min_initial} to {test_cutoff}")
+                print(f"         This ensures {bins_available} bins are available for PMF calculation")
+                print(f"         Consider using coarser discretization or more simulation data")
+            return test_cutoff, bins_available
+    
+    # Last resort: use cutoff=1 with warning
+    print(f"CRITICAL WARNING: Very sparse binning detected!")
+    print(f"  Data points: {nframes}, Total bins: {nbins_total}")  
+    print(f"  Using minimal cutoff=1. PMF quality may be poor.")
+    print(f"  Strongly recommend: coarser discretization or more simulation data")
+    
+    return 1, np.sum(hist2 >= 1)
+
 # memory usage is much reduced with multidimensional list for dV_mat; pretty fast ~ O(N)
-def reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit):
+def reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit,user_defined_cutoff=False):
     hist2, newedgesX, newedgesY = np.histogram2d(data[:,0], data[:,1], bins = (binsX, binsY), weights=None)
+    
+    # Apply smart histogram cutoff to avoid empty PMF bug
+    hist_min_adjusted, bins_available = smart_hist_cutoff(hist2, data, hist_min, user_defined_cutoff)
+    
+    if bins_available == 0:
+        print("ERROR: No bins contain any data. Check your input data and bin ranges.")
+        return hist2, newedgesX, newedgesY, np.zeros_like(hist2), np.zeros_like(hist2), np.zeros_like(hist2)
 
     beta = 1.0/(0.001987*T)
     nf = len(data[:,0])
@@ -324,7 +375,7 @@ def reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit):
 
     for jx in range(nbinsX):
       for jy in range(nbinsY):
-        if nA[jx,jy]>=hist_min :
+        if nA[jx,jy] >= hist_min_adjusted :  # Use adjusted cutoff
            num = int(nA[jx,jy])
            atemp = np.asarray(dV_mat[jx][jy][1:num+1])
            atemp2 = np.power(atemp,2)
