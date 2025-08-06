@@ -121,7 +121,7 @@ def main():
         MCweight=np.zeros(len(dV))
         beta_dV=np.multiply(dV,beta)
         for x in range(0,n+1):
-          MCweight=np.add(MCweight,(np.divide(np.power(beta_dV, x), float(scipy.misc.factorial(x)))))
+          MCweight=np.add(MCweight,(np.divide(np.power(beta_dV, x), float(math.factorial(x)))))
         weights=MCweight
         hist2,newedgesX,newedgesY = np.histogram2d(data[:,0], data[:,1], bins = (binsX, binsY), weights=weights)
         hist2=prephist(hist2,T,cb_max)
@@ -302,7 +302,7 @@ def reweight_CE(data,hist_min,binsX,discX,binsY,discY,dV,T,fit):
 
     binfX = np.zeros(nf) # array for storing assigned bin of each frame
     binfY = np.zeros(nf) # array for storing assigned bin of each frame
-    nA = np.zeros((nbinsX,nbinsY),dtype=np.int) # nA is equivalent to hist here
+    nA = np.zeros((nbinsX,nbinsY),dtype=int) # nA is equivalent to hist here
     dV_avg = np.zeros((nbinsX,nbinsY)) 
     dV_avg2 = np.zeros((nbinsX,nbinsY)) 
     dV_avg3 = np.zeros((nbinsX,nbinsY)) 
@@ -356,7 +356,7 @@ def reweight_dV(data,hist_min,binsX,binsY,discX,discY,dV,T):
 
     binfX = np.zeros(nf) # array for storing assigned bin of each frame
     binfY = np.zeros(nf) # array for storing assigned bin of each frame
-    nA = np.zeros((nbinsX,nbinsY),dtype=np.int) # nA is equivalent to hist here
+    nA = np.zeros((nbinsX,nbinsY),dtype=int) # nA is equivalent to hist here
     dV_avg = np.zeros((nbinsX,nbinsY)) 
     dV_std = np.zeros((nbinsX,nbinsY)) 
     dV_anharm = np.zeros((nbinsX,nbinsY)) 
